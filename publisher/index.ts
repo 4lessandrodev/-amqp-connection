@@ -1,15 +1,23 @@
 import amqp, { ConnectionUrl, Channel, ChannelWrapper } from 'amqp-connection-manager';
-import { CreateChannelOpts, AmqpConnectionManager } from 'amqp-connection-manager';
+import { CreateChannelOpts } from 'amqp-connection-manager';
+import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpConnectionManager';
 
 type Type = 'direct' | 'fanout' | 'topic';
-type Connection = { url: ConnectionUrl, exchangeName: string, exchangeType: Type };
+
+interface Opts extends Omit<CreateChannelOpts, 'setup'> {
+    url: ConnectionUrl; 
+    exchangeName: string; 
+    exchangeType: Type;
+    autoDelete?: boolean;
+    durable?: boolean;
+}
 
 export abstract class Publisher {
-    private static connection: AmqpConnectionManager;
-    private static opts: CreateChannelOpts & Connection;
+    private static connection: IAmqpConnectionManager;
+    private static opts: Opts
     private static channel: ChannelWrapper;
 
-    public static create(opt: Connection & Omit<CreateChannelOpts, 'setup'>): typeof Publisher {
+    public static create(opt: Opts): typeof Publisher {
         Publisher.opts = opt;
         Publisher.connect();
         return Publisher;
@@ -28,9 +36,7 @@ export abstract class Publisher {
             Publisher.connect();
         }
         Publisher.channel = Publisher.connection.createChannel({
-            confirm: Publisher.opts.confirm,
             json: Publisher.opts.json,
-            name: Publisher.opts.name ?? 'default',
             publishTimeout: Publisher.opts.publishTimeout ?? 9000,
             setup: (channel: Channel) => {
                 channel.assertExchange(Publisher.opts.exchangeName, Publisher.opts.exchangeType)
