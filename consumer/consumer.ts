@@ -1,5 +1,5 @@
 import { ConsumeMessage } from "amqplib";
-import { Consumer, Command, Options } from "./index";
+import { Consumer, Command, Options } from "./lib";
 
 const command1: Command = {
     execute: async (data: ConsumeMessage, command: Options) => {

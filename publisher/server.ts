@@ -1,5 +1,5 @@
 import Express from 'express';
-import { Publisher } from './index';
+import { Publisher } from './lib';
 
 const server = Express();
 server.use(Express.json());
