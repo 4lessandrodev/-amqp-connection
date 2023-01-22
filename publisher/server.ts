@@ -9,6 +9,8 @@ const service = Publisher.create({
     exchangeType: 'direct',
     url: 'amqp://username:password@localhost:5672',
     json: true,
+    durable: true,
+    autoDelete: false
 });
 
 server.post('/route01', async (req, res) => {

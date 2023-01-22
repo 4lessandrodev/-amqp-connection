@@ -27,13 +27,17 @@ const consumer = Consumer.create({
 consumer.createChannel({
     command: command1,
     json: true,
-    prefetchCount: 60,
+    prefetchCount: 10,
     routingKey: 'route01',
+    durable: true,
+    autoDelete: false
 });
 
 consumer.createChannel({
     command: command2,
     json: true,
-    prefetchCount: 60,
+    prefetchCount: 10,
     routingKey: 'route02',
+    durable: true,
+    autoDelete: false
 });

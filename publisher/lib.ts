@@ -39,7 +39,10 @@ export abstract class Publisher {
             json: Publisher.opts.json,
             publishTimeout: Publisher.opts.publishTimeout ?? 9000,
             setup: (channel: Channel) => {
-                channel.assertExchange(Publisher.opts.exchangeName, Publisher.opts.exchangeType)
+                channel.assertExchange(Publisher.opts.exchangeName, Publisher.opts.exchangeType, {
+                    durable: Publisher.opts.durable,
+                    autoDelete: Publisher.opts.autoDelete
+                })
             }
         });
         Publisher.channel.on('error', async () => { 

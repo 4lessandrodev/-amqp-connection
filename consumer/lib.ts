@@ -19,6 +19,7 @@ interface ChannelOps {
     command: Command;
     json: boolean;
     durable?: boolean;
+    publishTimeout?: number;
 }
 
 interface InfoOps {
@@ -53,7 +54,7 @@ export class Consumer {
     private static async onMessage(data: ConsumeMessage | null): Promise<Replies.Consume> {
         const event = data?.fields.routingKey ?? 'message';
         const ack = async (msg: ConsumeMessage) => Consumer.wrappers.forEach(async (wrapper) => await wrapper.ack(msg));
-        const nack = async (msg: ConsumeMessage) => Consumer.wrappers.forEach(async (wrapper) => await wrapper.ack(msg));
+        const nack = async (msg: ConsumeMessage) => Consumer.wrappers.forEach(async (wrapper) => await wrapper.nack(msg));
         const command = Consumer.dispatchs.get(event) as Command;
         await command.execute(data as ConsumeMessage, { ack, nack });
         return { consumerTag: data?.fields.consumerTag ?? '' };
@@ -62,9 +63,10 @@ export class Consumer {
     public static createChannel(opt: ChannelOps): ChannelWrapper {
         const wrapper = Consumer.connection.createChannel({
             json: opt.json,
+            publishTimeout: opt.publishTimeout,
             setup: (channel: Channel) => {
                 return Promise.all([
-                    channel.assertQueue(Consumer.opts.queueName),
+                    channel.assertQueue(Consumer.opts.queueName, { autoDelete: opt.autoDelete, durable: opt.durable }),
                     channel.assertExchange(Consumer.opts.exchangeName, Consumer.opts.exchangeType),
                     channel.prefetch(opt.prefetchCount),
                     channel.bindQueue(Consumer.opts.queueName, Consumer.opts.exchangeName, opt.routingKey),
