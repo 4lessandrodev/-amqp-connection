@@ -3,17 +3,19 @@ import { Consumer, Command, Options } from "./lib";
 
 const command1: Command = {
     execute: async (data: ConsumeMessage, command: Options) => {
-        console.log("route01");
+        console.log(data.fields.routingKey);
         console.log(data.content.toString());
-        await command.nack(data);
+        //await command.nack(data); // process again...
+        await command.replyTo(data.properties.replyTo, 'hello world', data.properties.correlationId);
+        await command.ack(data);
     }
 }
 
 const command2: Command = {
     execute: async (data: ConsumeMessage, command: Options) => {
-        console.log("route02");
+        console.log(data.fields.routingKey);
         console.log(data.content.toString());
-        command.ack(data);
+        await command.ack(data);
     }
 }
 
@@ -27,7 +29,7 @@ const consumer = Consumer.create({
 consumer.createChannel({
     command: command1,
     json: true,
-    prefetchCount: 10,
+    prefetchCount: 0,
     routingKey: 'route01',
     durable: true,
     autoDelete: false
@@ -36,7 +38,7 @@ consumer.createChannel({
 consumer.createChannel({
     command: command2,
     json: true,
-    prefetchCount: 10,
+    prefetchCount: 0,
     routingKey: 'route02',
     durable: true,
     autoDelete: false
