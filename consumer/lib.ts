@@ -6,7 +6,7 @@ type Type = 'direct' | 'fanout' | 'topic';
 export interface Options {
     ack: (data: ConsumeMessage) => Promise<void>;
     nack: (data: ConsumeMessage) => Promise<void>;
-    replyTo: (queueName: string, data: string | Buffer, correlationId: string) => Promise<void>;
+    replyTo: (queueName: string, data: string | Buffer | {}, correlationId: string) => Promise<void>;
 }
 
 export abstract class Command {
@@ -58,7 +58,7 @@ export class Consumer {
         const event = routingKey ?? data?.fields.routingKey ?? 'message';
         const ack = async (msg: ConsumeMessage): Promise<void> => Consumer.wrappers.forEach(async (wrapper): Promise<void> => await wrapper.ack(msg));
         const nack = async (msg: ConsumeMessage): Promise<void> => Consumer.wrappers.forEach(async (wrapper): Promise<void> => await wrapper.nack(msg));
-        const replyTo = async (queue: string, content: string | Buffer, correlationId: string): Promise<void> => {
+        const replyTo = async (queue: string, content: string | Buffer | {}, correlationId: string): Promise<void> => {
             await Consumer.wrapper.sendToQueue(queue, content, { correlationId });
         };
         const command = Consumer.dispatchs.get(event) as Command;

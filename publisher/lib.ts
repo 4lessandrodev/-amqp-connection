@@ -1,6 +1,7 @@
 import amqp, { ConnectionUrl, Channel, ChannelWrapper } from 'amqp-connection-manager';
 import { CreateChannelOpts } from 'amqp-connection-manager';
 import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpConnectionManager';
+import { PublishOptions } from 'amqp-connection-manager/dist/esm/ChannelWrapper';
 
 type Type = 'direct' | 'fanout' | 'topic';
 
@@ -70,11 +71,9 @@ export abstract class Publisher {
         return await Publisher.channel.publish(Publisher.opts.exchangeName, data.routingKey, { data: data.content });
     }
 
-    public static async sendRequest<T>(data: { content?: T, consumerQueue: string, routingKey: string }): Promise<string | null> {
+    public static async sendRequest<T, B>(data: { content?: T, consumerQueue: string, routingKey: string }): Promise<B | null> {
         let payload = null;
         const correlationId = randomUUID();
-
-        await Publisher.connect();
 
         const { queue } = await Publisher.channel.assertQueue('', {
             exclusive: true,
@@ -87,11 +86,15 @@ export abstract class Publisher {
             }
         });
 
-        await Publisher.channel.sendToQueue(data.consumerQueue, data.content ?? '', {
+        const content = data.content ?? '';
+        await Publisher.channel.sendToQueue(data.consumerQueue, content, {
             correlationId: correlationId,
             replyTo: queue,
             headers: { routingKey: data.routingKey }
-        });
+        } as PublishOptions);
+
+        // wait message
+        let i = 0; while (i < 3e9) { i++ };
 
         await Publisher.channel.consume(queue, (msg): string | null => {
             if (msg.properties.correlationId === correlationId) {
